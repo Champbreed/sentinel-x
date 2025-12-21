@@ -4,6 +4,9 @@ app.use(express.json());
 
 const SECURITY_MODE = process.env.SECURITY_MODE === 'ENABLED';
 
+// --- NEW: THE BLACKLIST VAULT ---
+const failedAttempts = {}; // Stores { IP: { count: 0, lockoutUntil: timestamp } }
+
 app.get('/', (req, res) => {
     res.send(`
         <html>
@@ -12,8 +15,7 @@ app.get('/', (req, res) => {
                 <style>
                     body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; text-align: center; padding: 50px; }
                     .dashboard { border: 2px solid \${SECURITY_MODE ? '#00ff41' : '#ff3131'}; padding: 30px; border-radius: 15px; display: inline-block; background: #111; box-shadow: 0 0 20px \${SECURITY_MODE ? '#00ff4133' : '#ff313133'}; }
-                    .btn { display: block; margin: 15px auto; padding: 12px 24px; background: #00ff41; color: black; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; width: 280px; font-size: 14px; transition: 0.3s; }
-                    .btn:hover { background: #00cc33; }
+                    .btn { display: block; margin: 15px auto; padding: 12px 24px; background: #00ff41; color: black; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; width: 280px; font-size: 14px; }
                     .btn-private { background: #444; color: white; border: 1px solid #00ff41; }
                     .research { margin-top: 30px; color: #888; border-top: 1px solid #333; padding-top: 20px; font-size: 12px; }
                 </style>
@@ -24,39 +26,35 @@ app.get('/', (req, res) => {
                     <p>SYSTEM STATUS: <span style="color: \${SECURITY_MODE ? '#00ff41' : '#ff3131'}">
                         \${SECURITY_MODE ? 'ENFORCED (JEKYLL)' : 'VULNERABLE (HYDE)'}
                     </span></p>
-                    
                     <button class="btn" onclick="window.location.href='/api/v1/user/1'">1. PUBLIC GUEST VIEW</button>
                     <button class="btn btn-private" onclick="privateAccess()">2. SIMON ESSIEN PRIVATE BYPASS</button>
-                    
-                    <div class="research">
-                        <p>RESEARCH LEAD: <strong>SIMON ESSIEN</strong></p>
-                    </div>
+                    <div class="research"><p>RESEARCH LEAD: <strong>SIMON ESSIEN</strong></p></div>
                 </div>
-
                 <script>
                     function privateAccess() {
                         let code = prompt("Enter Simon's Private Research Key:");
-                        
-                        // Log attempt to server
                         fetch('/api/v1/monitor/log', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ attempted_key: code })
+                        })
+                        .then(r => r.json())
+                        .then(status => {
+                            if (status.blocked) {
+                                alert("🚨 SYSTEM LOCKOUT: Too many failed attempts. Try again in 10 minutes.");
+                                return;
+                            }
+                            if (code === "Kelani123") {
+                                fetch('/api/v1/user/1', {
+                                    headers: { 'x-user-id': '1', 'x-research-key': 'SIMON_PRIVATE_KEY' }
+                                })
+                                .then(r => r.json())
+                                .then(data => alert("ACCESS GRANTED:\\n" + JSON.stringify(data, null, 2)))
+                                .catch(err => alert("Error: " + err));
+                            } else {
+                                alert("ACCESS DENIED: Unauthorized Key. Attempt " + status.attempts + "/3");
+                            }
                         });
-
-                        if (code === "Kelani123") {
-                            fetch('/api/v1/user/1', {
-                                headers: { 
-                                    'x-user-id': '1',
-                                    'x-research-key': 'SIMON_PRIVATE_KEY' 
-                                }
-                            })
-                            .then(r => r.json())
-                            .then(data => alert("ACCESS GRANTED:\\n" + JSON.stringify(data, null, 2)))
-                            .catch(err => alert("Error: " + err));
-                        } else {
-                            alert("ACCESS DENIED: Unauthorized Key.");
-                        }
                     }
                 </script>
             </body>
@@ -64,44 +62,48 @@ app.get('/', (req, res) => {
     `);
 });
 
-// --- Security Monitoring with Timestamps ---
+// --- UPDATED: Monitoring with IP Blocking ---
 app.post('/api/v1/monitor/log', (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const { attempted_key } = req.body;
-    const now = new Date();
-    const timestamp = now.toLocaleTimeString('en-GB') + " " + now.toLocaleDateString('en-GB');
+    const now = Date.now();
+
+    // Initialize IP data if new
+    if (!failedAttempts[ip]) failedAttempts[ip] = { count: 0, lockoutUntil: 0 };
+
+    // Check if currently blocked
+    if (now < failedAttempts[ip].lockoutUntil) {
+        return res.json({ blocked: true });
+    }
 
     if (attempted_key !== "Kelani123") {
-        console.warn("⚠️ [" + timestamp + "] SECURITY ALERT: Unauthorized Bypass Attempt! Key: " + attempted_key);
+        failedAttempts[ip].count++;
+        console.warn(\`⚠️ SECURITY ALERT: IP [\${ip}] failed attempt \${failedAttempts[ip].count}/3. Key used: \${attempted_key}\`);
+
+        if (failedAttempts[ip].count >= 3) {
+            failedAttempts[ip].lockoutUntil = now + (10 * 60 * 1000); // 10 Min ban
+            console.error(\`🚫 BAN TRIGGERED: IP [\${ip}] blacklisted for 10 minutes.\`);
+        }
+        res.json({ blocked: false, attempts: failedAttempts[ip].count });
     } else {
-        console.log("✅ [" + timestamp + "] SUCCESS: Simon Essien authenticated correctly.");
+        failedAttempts[ip].count = 0; // Reset on success
+        console.log("✅ SUCCESS: Simon Essien authenticated correctly.");
+        res.json({ blocked: false, attempts: 0 });
     }
-    res.sendStatus(204);
 });
 
 app.get('/api/v1/user/:id', (req, res) => {
     const requestedId = req.params.id;
     const authHeaderId = req.headers['x-user-id'];
     const researchKey = req.headers['x-research-key'];
-    const MY_SECRET = "SIMON_PRIVATE_KEY";
-
     if (SECURITY_MODE) {
-        if (researchKey !== MY_SECRET) {
-            return res.status(401).json({ error: "Unauthorized: Invalid Research Key" });
-        }
-        if (authHeaderId !== requestedId) {
-            return res.status(403).json({ error: "Policy Violation: BOLA Detected" });
-        }
+        if (researchKey !== "SIMON_PRIVATE_KEY") return res.status(401).json({ error: "Unauthorized" });
+        if (authHeaderId !== requestedId) return res.status(403).json({ error: "BOLA Detected" });
     }
-
-    res.json({
-        id: requestedId,
-        intel: "Sensitive Project Alpha-7",
-        research_lead: "Simon Essien",
-        status: "Access Granted"
-    });
+    res.json({ id: requestedId, intel: "Sensitive Project Alpha-7", status: "Access Granted" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Sentinel-X Dashboard Live with Forensics'));
+app.listen(PORT, () => console.log('Sentinel-X Dashboard: ACTIVE SHIELD ONLINE'));
 
 
