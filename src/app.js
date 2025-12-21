@@ -12,21 +12,20 @@ app.get('/', (req, res) => {
                 <style>
                     body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; text-align: center; padding: 50px; }
                     .dashboard { border: 2px solid ${SECURITY_MODE ? '#00ff41' : '#ff3131'}; padding: 30px; border-radius: 15px; display: inline-block; background: #111; box-shadow: 0 0 20px ${SECURITY_MODE ? '#00ff4133' : '#ff313133'}; }
-                    .btn { display: block; margin: 15px auto; padding: 12px 24px; background: #00ff41; color: black; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; width: 80%; }
+                    .btn { display: block; margin: 15px auto; padding: 12px 24px; background: #00ff41; color: black; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; width: 280px; font-size: 14px; }
                     .btn-private { background: #444; color: white; border: 1px solid #00ff41; }
-                    .research { margin-top: 30px; color: #888; border-top: 1px solid #333; padding-top: 20px; }
+                    .research { margin-top: 30px; color: #888; border-top: 1px solid #333; padding-top: 20px; font-size: 12px; }
                 </style>
             </head>
             <body>
                 <div class="dashboard">
                     <h1>🛡️ SENTINEL-X GATEWAY</h1>
-                    <div style="margin-bottom: 20px;">
-                        SYSTEM STATUS: <span style="color: ${SECURITY_MODE ? '#00ff41' : '#ff3131'}">
-                            ${SECURITY_MODE ? 'ENFORCED (JEKYLL)' : 'VULNERABLE (HYDE)'}
-                        </span>
-                    </div>
+                    <p>SYSTEM STATUS: <span style="color: ${SECURITY_MODE ? '#00ff41' : '#ff3131'}">
+                        ${SECURITY_MODE ? 'ENFORCED (JEKYLL)' : 'VULNERABLE (HYDE)'}
+                    </span></p>
                     
-                    <a class="btn" href="/api/v1/user/1">1. PUBLIC GUEST VIEW</a>
+                    <button class="btn" onclick="window.location.href='/api/v1/user/1'">1. PUBLIC GUEST VIEW</button>
+                    
                     <button class="btn btn-private" onclick="privateAccess()">2. SIMON ESSIEN PRIVATE BYPASS</button>
                     
                     <div class="research">
@@ -36,10 +35,8 @@ app.get('/', (req, res) => {
 
                 <script>
                     function privateAccess() {
-                        // The new security code check
                         let code = prompt("Enter Simon's Private Research Key:");
-                        
-                        if (code === "Kelani123") { 
+                        if (code === "Kelani123") {
                             fetch('/api/v1/user/1', {
                                 headers: { 
                                     'x-user-id': '1',
@@ -47,9 +44,7 @@ app.get('/', (req, res) => {
                                 }
                             })
                             .then(r => r.json())
-                            .then(data => {
-                                alert("ACCESS GRANTED:\\n" + JSON.stringify(data, null, 2));
-                            })
+                            .then(data => alert("ACCESS GRANTED:\\n" + JSON.stringify(data, null, 2)))
                             .catch(err => alert("Error: " + err));
                         } else {
                             alert("ACCESS DENIED: Unauthorized Key.");
