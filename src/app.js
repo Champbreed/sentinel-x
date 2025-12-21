@@ -1,53 +1,48 @@
-const express = require('express');
-const app = express();
-app.use(express.json());
+// ... (keep the rest of your app.js the same)
 
-const SECURITY_MODE = process.env.SECURITY_MODE === 'ENABLED';
-
+// UPDATE ONLY THE HTML PORTION IN YOUR app.js:
 app.get('/', (req, res) => {
     res.send(`
         <html>
             <head>
-                <title>Sentinel-X Playground</title>
+                <title>Sentinel-X Private Gateway</title>
                 <style>
                     body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; text-align: center; padding: 50px; }
-                    .dashboard { border: 2px solid ${SECURITY_MODE ? '#00ff41' : '#ff3131'}; padding: 30px; border-radius: 15px; display: inline-block; background: #111; box-shadow: 0 0 20px ${SECURITY_MODE ? '#00ff4133' : '#ff313133'}; }
-                    .status-box { font-size: 1.2em; margin: 20px 0; padding: 10px; background: #222; border-radius: 5px; }
-                    .btn { display: block; margin: 15px auto; padding: 12px 24px; background: #00ff41; color: black; text-decoration: none; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; width: 80%; }
-                    .btn-alt { background: #444; color: white; }
-                    .research { margin-top: 30px; color: #888; border-top: 1px solid #333; padding-top: 20px; }
+                    .dashboard { border: 2px solid ${SECURITY_MODE ? '#00ff41' : '#ff3131'}; padding: 30px; border-radius: 15px; display: inline-block; background: #111; }
+                    .btn { display: block; margin: 15px auto; padding: 12px 24px; background: #00ff41; color: black; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; width: 80%; }
+                    .btn-private { background: #444; color: white; border: 1px solid #00ff41; }
                 </style>
             </head>
             <body>
                 <div class="dashboard">
                     <h1>🛡️ SENTINEL-X GATEWAY</h1>
-                    <div class="status-box">
-                        SYSTEM STATUS: <span style="color: ${SECURITY_MODE ? '#00ff41' : '#ff3131'}">
-                            ${SECURITY_MODE ? 'ENFORCED (JEKYLL)' : 'VULNERABLE (HYDE)'}
-                        </span>
-                    </div>
+                    <p>SYSTEM STATUS: ${SECURITY_MODE ? 'ENFORCED (JEKYLL)' : 'VULNERABLE (HYDE)'}</p>
                     
-                    <p>Testing BOLA Protection:</p>
-                    
-                    <a class="btn" href="/api/v1/user/1">1. GUEST ACCESS (No Header)</a>
+                    <a class="btn" href="/api/v1/user/1">1. PUBLIC GUEST VIEW</a>
 
-                    <button class="btn btn-alt" onclick="testBypass()">2. SIMON ESSIEN BYPASS (With Header)</button>
+                    <button class="btn btn-private" onclick="privateAccess()">2. SIMON ESSIEN PRIVATE BYPASS</button>
                     
-                    <div class="research">
-                        <p>RESEARCH LEAD: <strong>SIMON ESSIEN</strong></p>
-                    </div>
+                    <p>RESEARCH LEAD: SIMON ESSIEN</p>
                 </div>
 
                 <script>
-                    function testBypass() {
-                        fetch('/api/v1/user/1', {
-                            headers: { 'x-user-id': '1' }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            alert("SECURITY OVERRIDE SUCCESS:\\n" + JSON.stringify(data, null, 2));
-                        })
-                        .catch(err => alert("Error: " + err));
+                    function privateAccess() {
+                        // This pops up a box on your phone asking for the code
+                        let code = prompt("Enter Simon's Private Research Key:");
+                        
+                        if (code === "SIMON123") { // This is your password
+                            fetch('/api/v1/user/1', {
+                                headers: { 
+                                    'x-user-id': '1',
+                                    'x-research-key': 'SIMON_PRIVATE_KEY' 
+                                }
+                            })
+                            .then(r => r.json())
+                            .then(data => alert("ACCESS GRANTED:\\n" + JSON.stringify(data)))
+                            .catch(err => alert("Error: " + err));
+                        } else {
+                            alert("ACCESS DENIED: Unauthorized Key.");
+                        }
                     }
                 </script>
             </body>
@@ -55,28 +50,5 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.get('/api/v1/user/:id', (req, res) => {
-    const requestedId = req.params.id;
-    const authHeaderId = req.headers['x-user-id'];
-
-    if (SECURITY_MODE) {
-        if (authHeaderId !== requestedId) {
-            return res.status(403).json({ 
-                error: "Policy Violation: BOLA Detected",
-                research_note: "Access Denied via Simon Essien Security Logic" 
-            });
-        }
-    }
-
-    res.json({
-        id: requestedId,
-        intel: "Sensitive Project Alpha-7",
-        research_lead: "Simon Essien",
-        status: "Access Granted"
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Sentinel-X Dashboard Live'));
-
+// ... (keep your app.get('/api/v1/user/:id', ...) logic exactly as it is)
 
