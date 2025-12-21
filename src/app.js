@@ -6,50 +6,57 @@ const SECURITY_MODE = process.env.SECURITY_MODE === 'ENABLED';
 const failedAttempts = {}; 
 
 app.get('/', (req, res) => {
-    // Fixed: Standard strings used to ensure UI visibility on all devices
-    const statusText = SECURITY_MODE ? 'ENFORCED' : 'VULNERABLE';
-    
+    // Ensuring variables are processed BEFORE sending to browser for 100% visibility
+    const statusLabel = SECURITY_MODE ? "ACTIVE: ENFORCED" : "ACTIVE: VULNERABLE";
+    const statusColor = SECURITY_MODE ? "#00ff41" : "#ff3131";
+
     res.send(`
         <html>
             <head>
-                <title>SENTINEL-X | SECURE GATEWAY</title>
+                <title>SENTINEL-X VANGUARD</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    :root { --neon: #00ff41; --bg: #050505; --card: #0f0f0f; }
                     body { 
-                        font-family: 'Courier New', monospace; 
-                        background: var(--bg); 
-                        background-image: radial-gradient(circle at 2px 2px, rgba(0, 255, 65, 0.1) 1px, transparent 0);
-                        background-size: 30px 30px;
-                        color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;
+                        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+                        background-color: #000; 
+                        color: #fff; 
+                        display: flex; align-items: center; justify-content: center; 
+                        height: 100vh; margin: 0;
                     }
                     .dashboard { 
-                        background: var(--card); 
-                        padding: 40px; border-radius: 10px; 
-                        border: 2px solid var(--neon);
-                        box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
-                        width: 350px; text-align: center;
+                        background: #111; 
+                        padding: 40px 30px; 
+                        border-radius: 12px; 
+                        border: 2px solid #00ff41;
+                        box-shadow: 0 0 40px rgba(0, 255, 65, 0.2);
+                        width: 90%; max-width: 400px; text-align: center;
                     }
-                    h1 { font-size: 20px; letter-spacing: 4px; margin-bottom: 20px; color: var(--neon); }
-                    .status-box { background: #000; padding: 10px; border: 1px solid #333; font-size: 11px; margin-bottom: 25px; color: #aaa; }
+                    h1 { color: #00ff41; font-size: 24px; letter-spacing: 3px; margin: 0 0 10px 0; }
+                    .status-line { 
+                        font-weight: bold; font-size: 14px; margin-bottom: 30px; 
+                        color: ${statusColor}; border: 1px solid ${statusColor};
+                        padding: 8px; border-radius: 4px; display: inline-block;
+                    }
                     .btn { 
-                        display: block; width: 100%; padding: 14px; margin: 12px 0;
-                        background: var(--neon); color: black; font-weight: bold;
-                        border: none; border-radius: 4px; cursor: pointer;
-                        font-size: 12px; text-transform: uppercase;
+                        display: block; width: 100%; padding: 16px; margin: 15px 0;
+                        background: #00ff41; color: #000; font-weight: 900;
+                        border: none; border-radius: 8px; cursor: pointer;
+                        font-size: 14px; text-transform: uppercase; transition: 0.2s;
                     }
-                    .btn-alt { background: #222; color: var(--neon); border: 1px solid var(--neon); }
-                    .footer { margin-top: 30px; font-size: 9px; color: #555; letter-spacing: 1px; }
+                    .btn-bypass { background: #222; color: #00ff41; border: 1px solid #00ff41; }
+                    .btn:active { transform: scale(0.98); }
+                    .footer { margin-top: 30px; font-size: 11px; color: #666; font-weight: bold; }
                 </style>
             </head>
             <body>
                 <div class="dashboard">
                     <h1>SENTINEL-X</h1>
-                    <div class="status-box">GATEWAY STATUS: ${statusText} // LAYER: 03</div>
+                    <div class="status-line">${statusLabel}</div>
                     
                     <button class="btn" onclick="window.location.href='/api/v1/user/1'">ACCESS PUBLIC NODE</button>
-                    <button class="btn btn-alt" onclick="privateAccess()">BYPASS PROTOCOL</button>
+                    <button class="btn btn-bypass" onclick="privateAccess()">BYPASS PROTOCOL</button>
                     
-                    <div class="footer">OPERATOR: SIMON ESSIEN // KELANI-OS v5.0</div>
+                    <div class="footer">RESEARCH LEAD: SIMON ESSIEN // KELANI-OS v6.0</div>
                 </div>
 
                 <script>
@@ -65,7 +72,7 @@ app.get('/', (req, res) => {
                         const result = await response.json();
 
                         if (result.blocked) {
-                            alert("🛑 LOCKOUT IN EFFECT: Your IP has been blacklisted for 10 minutes.");
+                            alert("🛑 CRITICAL LOCKOUT: Too many failures. Access restricted for 1 HOUR.");
                             return;
                         }
 
@@ -74,7 +81,7 @@ app.get('/', (req, res) => {
                                 headers: { 'x-user-id': '1', 'x-research-key': 'SIMON_PRIVATE_KEY' }
                             });
                             const data = await dataResponse.json();
-                            alert("DECRYPTED DATA:\\n" + JSON.stringify(data, null, 2));
+                            alert("DECRYPTED INTEL:\\n" + JSON.stringify(data, null, 2));
                         } else {
                             alert("ACCESS DENIED: " + (3 - result.attempts) + " attempts remaining.");
                         }
@@ -97,9 +104,11 @@ app.post('/api/v1/monitor/log', (req, res) => {
     if (attempted_key !== "Kelani123") {
         failedAttempts[ip].count++;
         console.warn("⚠️ SECURITY: IP [" + ip + "] fail " + failedAttempts[ip].count + "/3.");
+        
         if (failedAttempts[ip].count >= 3) {
-            failedAttempts[ip].lockoutUntil = now + (10 * 60 * 1000);
-            console.error("🚫 BLACKLISTED: IP [" + ip + "]");
+            // SET TO 1 HOUR (60 minutes * 60 seconds * 1000ms)
+            failedAttempts[ip].lockoutUntil = now + (60 * 60 * 1000);
+            console.error("🚫 BLACKLISTED (1 HR): IP [" + ip + "]");
         }
         res.json({ blocked: false, attempts: failedAttempts[ip].count });
     } else {
@@ -113,7 +122,7 @@ app.get('/api/v1/user/:id', (req, res) => {
     const ip = rawIp.split(',')[0].trim();
 
     if (failedAttempts[ip] && Date.now() < failedAttempts[ip].lockoutUntil) {
-        return res.status(403).json({ error: "IP Blacklisted" });
+        return res.status(403).json({ error: "Access Denied: IP is Blacklisted for 1hr." });
     }
 
     if (SECURITY_MODE) {
@@ -121,10 +130,10 @@ app.get('/api/v1/user/:id', (req, res) => {
         if (req.headers['x-user-id'] !== req.params.id) return res.status(403).json({ error: "BOLA Violation" });
     }
 
-    res.json({ id: req.params.id, intel: "Alpha-7 Research", lead: "Simon Essien" });
+    res.json({ id: req.params.id, intel: "Alpha-7 Top Secret Research", lead: "Simon Essien" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('SENTINEL-X: ELITE ONLINE'));
+app.listen(PORT, () => console.log('SENTINEL-X: VANGUARD MODE ONLINE'));
 
 
