@@ -6,48 +6,50 @@ const SECURITY_MODE = process.env.SECURITY_MODE === 'ENABLED';
 const failedAttempts = {}; 
 
 app.get('/', (req, res) => {
+    // Fixed: Standard strings used to ensure UI visibility on all devices
+    const statusText = SECURITY_MODE ? 'ENFORCED' : 'VULNERABLE';
+    
     res.send(`
         <html>
             <head>
                 <title>SENTINEL-X | SECURE GATEWAY</title>
                 <style>
-                    :root { --neon: #00ff41; --bg: #050505; --card: #0f0f0f; --danger: #ff3131; }
+                    :root { --neon: #00ff41; --bg: #050505; --card: #0f0f0f; }
                     body { 
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                        font-family: 'Courier New', monospace; 
                         background: var(--bg); 
-                        background-image: radial-gradient(circle at 2px 2px, rgba(0, 255, 65, 0.15) 1px, transparent 0);
-                        background-size: 40px 40px;
+                        background-image: radial-gradient(circle at 2px 2px, rgba(0, 255, 65, 0.1) 1px, transparent 0);
+                        background-size: 30px 30px;
                         color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;
                     }
                     .dashboard { 
                         background: var(--card); 
-                        padding: 50px; border-radius: 20px; 
-                        border: 1px solid rgba(0, 255, 65, 0.3);
-                        box-shadow: 0 0 50px rgba(0, 0, 0, 1), inset 0 0 20px rgba(0, 255, 65, 0.05);
-                        width: 400px; text-align: center;
+                        padding: 40px; border-radius: 10px; 
+                        border: 2px solid var(--neon);
+                        box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+                        width: 350px; text-align: center;
                     }
-                    h1 { font-size: 22px; letter-spacing: 5px; margin-bottom: 30px; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
-                    .status-box { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; font-size: 12px; margin-bottom: 30px; border: 1px solid #333; }
+                    h1 { font-size: 20px; letter-spacing: 4px; margin-bottom: 20px; color: var(--neon); }
+                    .status-box { background: #000; padding: 10px; border: 1px solid #333; font-size: 11px; margin-bottom: 25px; color: #aaa; }
                     .btn { 
-                        display: block; width: 100%; padding: 15px; margin: 10px 0;
-                        background: transparent; color: var(--neon); font-weight: bold;
-                        border: 1px solid var(--neon); border-radius: 8px; cursor: pointer;
-                        transition: all 0.3s; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+                        display: block; width: 100%; padding: 14px; margin: 12px 0;
+                        background: var(--neon); color: black; font-weight: bold;
+                        border: none; border-radius: 4px; cursor: pointer;
+                        font-size: 12px; text-transform: uppercase;
                     }
-                    .btn:hover { background: var(--neon); color: black; box-shadow: 0 0 20px var(--neon); }
-                    .btn-main { background: var(--neon); color: black; }
-                    .footer { margin-top: 40px; font-size: 10px; color: #444; letter-spacing: 2px; }
+                    .btn-alt { background: #222; color: var(--neon); border: 1px solid var(--neon); }
+                    .footer { margin-top: 30px; font-size: 9px; color: #555; letter-spacing: 1px; }
                 </style>
             </head>
             <body>
                 <div class="dashboard">
                     <h1>SENTINEL-X</h1>
-                    <div class="status-box">SYSTEM: \${SECURITY_MODE ? 'ENFORCED' : 'VULNERABLE'} // LAYER: 03</div>
+                    <div class="status-box">GATEWAY STATUS: ${statusText} // LAYER: 03</div>
                     
-                    <button class="btn btn-main" onclick="window.location.href='/api/v1/user/1'">Access Public Node</button>
-                    <button class="btn" onclick="privateAccess()">Bypass Protocol</button>
+                    <button class="btn" onclick="window.location.href='/api/v1/user/1'">ACCESS PUBLIC NODE</button>
+                    <button class="btn btn-alt" onclick="privateAccess()">BYPASS PROTOCOL</button>
                     
-                    <div class="footer">OPERATOR: SIMON ESSIEN // KELANI-OS v4.2</div>
+                    <div class="footer">OPERATOR: SIMON ESSIEN // KELANI-OS v5.0</div>
                 </div>
 
                 <script>
@@ -84,25 +86,20 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/v1/monitor/log', (req, res) => {
-    // Correct IP detection for Render
     const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const ip = rawIp.split(',')[0].trim(); 
     const { attempted_key } = req.body;
     const now = Date.now();
 
     if (!failedAttempts[ip]) failedAttempts[ip] = { count: 0, lockoutUntil: 0 };
-    
-    if (now < failedAttempts[ip].lockoutUntil) {
-        return res.json({ blocked: true });
-    }
+    if (now < failedAttempts[ip].lockoutUntil) return res.json({ blocked: true });
 
     if (attempted_key !== "Kelani123") {
         failedAttempts[ip].count++;
-        console.warn("⚠️ SECURITY: IP [" + ip + "] failed. Count: " + failedAttempts[ip].count);
-        
+        console.warn("⚠️ SECURITY: IP [" + ip + "] fail " + failedAttempts[ip].count + "/3.");
         if (failedAttempts[ip].count >= 3) {
             failedAttempts[ip].lockoutUntil = now + (10 * 60 * 1000);
-            console.error("🚫 BLACKLISTED: IP [" + ip + "] is now blocked.");
+            console.error("🚫 BLACKLISTED: IP [" + ip + "]");
         }
         res.json({ blocked: false, attempts: failedAttempts[ip].count });
     } else {
@@ -116,7 +113,7 @@ app.get('/api/v1/user/:id', (req, res) => {
     const ip = rawIp.split(',')[0].trim();
 
     if (failedAttempts[ip] && Date.now() < failedAttempts[ip].lockoutUntil) {
-        return res.status(403).json({ error: "Access Denied: Your IP is blacklisted." });
+        return res.status(403).json({ error: "IP Blacklisted" });
     }
 
     if (SECURITY_MODE) {
@@ -128,6 +125,6 @@ app.get('/api/v1/user/:id', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('SENTINEL-X: SHADOW MODE ACTIVE'));
+app.listen(PORT, () => console.log('SENTINEL-X: ELITE ONLINE'));
 
 
