@@ -4,8 +4,8 @@ app.use(express.json());
 
 const SECURITY_MODE = process.env.SECURITY_MODE === 'ENABLED';
 
-// --- NEW: THE BLACKLIST VAULT ---
-const failedAttempts = {}; // Stores { IP: { count: 0, lockoutUntil: timestamp } }
+// Blacklist Vault
+const failedAttempts = {}; 
 
 app.get('/', (req, res) => {
     res.send(`
@@ -62,31 +62,28 @@ app.get('/', (req, res) => {
     `);
 });
 
-// --- UPDATED: Monitoring with IP Blocking ---
 app.post('/api/v1/monitor/log', (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const { attempted_key } = req.body;
     const now = Date.now();
 
-    // Initialize IP data if new
     if (!failedAttempts[ip]) failedAttempts[ip] = { count: 0, lockoutUntil: 0 };
 
-    // Check if currently blocked
     if (now < failedAttempts[ip].lockoutUntil) {
         return res.json({ blocked: true });
     }
 
     if (attempted_key !== "Kelani123") {
         failedAttempts[ip].count++;
-        console.warn(\`⚠️ SECURITY ALERT: IP [\${ip}] failed attempt \${failedAttempts[ip].count}/3. Key used: \${attempted_key}\`);
+        console.warn("⚠️ SECURITY ALERT: IP [" + ip + "] failed attempt " + failedAttempts[ip].count + "/3. Key: " + attempted_key);
 
         if (failedAttempts[ip].count >= 3) {
-            failedAttempts[ip].lockoutUntil = now + (10 * 60 * 1000); // 10 Min ban
-            console.error(\`🚫 BAN TRIGGERED: IP [\${ip}] blacklisted for 10 minutes.\`);
+            failedAttempts[ip].lockoutUntil = now + (10 * 60 * 1000); 
+            console.error("🚫 BAN TRIGGERED: IP [" + ip + "] blacklisted for 10 minutes.");
         }
         res.json({ blocked: false, attempts: failedAttempts[ip].count });
     } else {
-        failedAttempts[ip].count = 0; // Reset on success
+        failedAttempts[ip].count = 0; 
         console.log("✅ SUCCESS: Simon Essien authenticated correctly.");
         res.json({ blocked: false, attempts: 0 });
     }
@@ -105,5 +102,6 @@ app.get('/api/v1/user/:id', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Sentinel-X Dashboard: ACTIVE SHIELD ONLINE'));
+
 
 
