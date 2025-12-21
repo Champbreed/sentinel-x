@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: Sentinel-X
+  version: 1.0.0
+paths:
+  /api/v1/user/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Blocked by Policy
+
+

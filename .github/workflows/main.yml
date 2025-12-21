@@ -1,0 +1,20 @@
+name: Sentinel-X Security Gate
+on: [push]
+
+jobs:
+  governance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: OPA Policy Audit
+        run: |
+          # This verifies your Rego files are syntactically correct
+          docker run --rm -v $(pwd):/work openpolicyagent/opa check /work/policies/
+
+      - name: Deploy to Staging (Simulated)
+        run: echo "Security checks passed. Ready for Render deployment."
+
+
+
+
