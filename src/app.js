@@ -36,7 +36,6 @@ app.get('/', (req, res) => {
                     function privateAccess() {
                         let code = prompt("Enter Simon's Private Research Key:");
                         
-                        // We send the attempt to the server to LOG it
                         fetch('/api/v1/monitor/log', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -63,15 +62,14 @@ app.get('/', (req, res) => {
     `);
 });
 
-// --- NEW: The Monitoring/Logging Eye ---
 app.post('/api/v1/monitor/log', (req, res) => {
     const { attempted_key } = req.body;
     if (attempted_key !== "Kelani123") {
-        console.warn(\`⚠️ SECURITY ALERT: Unauthorized Bypass Attempt! Used Key: [\${attempted_key}]\`);
+        console.warn("⚠️ SECURITY ALERT: Unauthorized Bypass Attempt! Key: " + attempted_key);
     } else {
         console.log("✅ SUCCESS: Simon Essien logged in correctly.");
     }
-    res.sendStatus(204); // Silent response
+    res.sendStatus(204);
 });
 
 app.get('/api/v1/user/:id', (req, res) => {
@@ -98,8 +96,7 @@ app.get('/api/v1/user/:id', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Sentinel-X Dashboard Live with Monitoring'));
-
+app.listen(PORT, () => console.log('Sentinel-X Dashboard Live'));
 
 
 
