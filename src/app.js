@@ -5,7 +5,7 @@ app.use(express.json());
 // The 'Jekyll & Hyde' Toggle
 const SECURITY_MODE = process.env.SECURITY_MODE === 'ENABLED';
 
-// --- NEW: Visual Playground (Frontend) ---
+// --- Visual Playground (Frontend) ---
 app.get('/', (req, res) => {
     res.send(`
         <html>
@@ -32,7 +32,6 @@ app.get('/', (req, res) => {
                     
                     <div class="research">
                         <p>RESEARCH LEAD: <strong>SIMON ESSIEN</strong></p>
-                        <p>Project: DevSecOps 90-Day Mastery</p>
                     </div>
                 </div>
             </body>
@@ -50,7 +49,6 @@ app.get('/api/v1/user/:id', (req, res) => {
 
     if (SECURITY_MODE) {
         if (authHeaderId !== requestedId) {
-            console.log(`[BLOCK] BOLA Attempt on ID: ${requestedId}`);
             return res.status(403).json({ 
                 error: "Policy Violation: BOLA Detected",
                 research_note: "Access Denied via Simon Essien Security Logic"
@@ -68,6 +66,5 @@ app.get('/api/v1/user/:id', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sentinel-X Active on Port ${PORT}`));
-
 
 
