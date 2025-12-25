@@ -9,10 +9,12 @@ jobs:
 
       - name: OPA Policy Audit
         run: |
-          # Target the specific file and force V1 compatibility
-          docker run --rm -v $(pwd):/work openpolicyagent/opa check /work/policies/authz.rego --v1-compatible
+          # We point directly to the file and use the V1 compatibility flag
+          docker run --rm -v ${{ github.workspace }}:/work openpolicyagent/opa check /work/policies/authz.rego --v1-compatible
 
       - name: Deploy to Staging (Simulated)
         run: echo "Security checks passed. Ready for Render deployment."
+
+
 
 
