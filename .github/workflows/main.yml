@@ -1,4 +1,3 @@
-   /data/data/com.termux/files/home/sentinel-x/.github/workflows/main.yml
 name: Sentinel-X Security Gate
 on: [push]
 
@@ -7,16 +6,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: OPA Policy Audit
         run: |
-          # We point directly to the file and use the V1 compatibility flag
-          docker run --rm -v ${{ github.workspace }}:/work openpolicyagent/>
+          docker run --rm -v ${{ github.workspace }}:/work openpolicyagent/opa check /work/policies/authz.rego --v1-compatible
 
-      - name: Deploy to Staging (Simulated)
-        run: echo "Security checks passed. Ready for Render deployment."
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
 
-"
+  deploy:
+    needs: [governance-check, secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: echo "Security gates passed. Deploying..."
+
 
 
 
