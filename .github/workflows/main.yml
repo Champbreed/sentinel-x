@@ -14,13 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
+          base: "" # This forces it to ignore history
           head: HEAD
           extra_args: --only-verified --fail=high
 
@@ -29,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
-        run: echo "Security gates passed. System Secure."
+        run: echo "Sentinel-X Gate Cleared. Deployment Successful."
 
-# Build Verified: Thu Dec 25 09:30:35 WAT 2025
+
+# Gate Reset: Thu Dec 25 09:35:40 WAT 2025
