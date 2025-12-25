@@ -1,6 +1,9 @@
 package api.authz
 
-default allow = false
+# This tells OPA to use the modern V1 syntax rules
+import rego.v1
+
+default allow := false
 
 # Rule: Allow access if the user's ID matches the resource ID
 allow if {
