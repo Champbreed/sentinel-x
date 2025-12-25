@@ -1,3 +1,4 @@
+   /data/data/com.termux/files/home/sentinel-x/.github/workflows/main.yml
 name: Sentinel-X Security Gate
 on: [push]
 
@@ -10,10 +11,12 @@ jobs:
       - name: OPA Policy Audit
         run: |
           # We point directly to the file and use the V1 compatibility flag
-          docker run --rm -v ${{ github.workspace }}:/work openpolicyagent/opa check /work/policies/authz.rego --v1-compatible
+          docker run --rm -v ${{ github.workspace }}:/work openpolicyagent/>
 
       - name: Deploy to Staging (Simulated)
         run: echo "Security checks passed. Ready for Render deployment."
+
+"
 
 
 
